@@ -1,7 +1,7 @@
 
 export const initialMessages = [
     {
-      _id: 1,
+      _id: '1',
       text: 'Hi Sasha, i hope you are fine today',
       createdAt: new Date(),
       user: {
@@ -11,11 +11,11 @@ export const initialMessages = [
       },
     },
     {
-      _id: 2,
+      _id: '2',
       text: 'Yes, I am doing fine',
       createdAt: new Date(),
       user: {
-        _id: 1,
+        _id: '1',
       },
     },
     {
@@ -29,19 +29,19 @@ export const initialMessages = [
       },
     },  
     {
-      _id: 4,
+      _id: '4',
       text: 'I am busy now finishing my chat app. maybe later.',
       createdAt: new Date(),
       user: {
-        _id: 1,
+        _id: '1',
       },
     },
     {
-      _id: 5,
+      _id: '5',
       text: 'Sure, take your timne.',
       createdAt: new Date(),
       user: {
-        _id: 1,
+        _id: '1',
       },
     },  
   ];

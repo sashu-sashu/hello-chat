@@ -40,8 +40,8 @@ function Chat() {
     const username = route.params.name
 
     useLayoutEffect(() => {
-        const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
-        const unsubscribe = onSnapshot(q, (snapshot) => setMessages(
+        const firebaseQuery = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(firebaseQuery, (snapshot) => setMessages(
             snapshot.docs.map(doc => ({
                 _id: doc.data()._id,
                 createdAt: doc.data().createdAt.toDate(),
