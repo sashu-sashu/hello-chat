@@ -1,56 +1,14 @@
-import React, {useState,useEffect,useCallback} from 'react'
+import React, {useState,useLayoutEffect,useCallback} from 'react'
 import {View, Text,Platform,
     KeyboardAvoidingView,StyleSheet} from 'react-native';
 import { GiftedChat, Bubble} from 'react-native-gifted-chat'
 import { useRoute } from '@react-navigation/native';
 import Constants from 'expo-constants';
+import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
 
-const initialMessages = [
-    {
-      _id: 1,
-      text: 'Hi Sasha, i hope you are fine today',
-      createdAt: new Date(),
-      user: {
-        _id: 2,
-        name: 'Can you please send me the pictures of yesterday?',
-        avatar: 'https://placeimg.com/140/140/any',
-      },
-    },
-    {
-      _id: 2,
-      text: 'Yes, I am doing fine',
-      createdAt: new Date(),
-      user: {
-        _id: 1,
-      },
-    },
-    {
-      _id: 3,
-      text: 'Could you please send me the pictures you took at the museum?',
-      createdAt: new Date(),
-      user: {
-        _id: 2,
-        name: 'React Native',
-        avatar: 'https://placeimg.com/140/140/any',
-      },
-    },  
-    {
-      _id: 4,
-      text: 'I am busy now finishing my chat app. maybe later.',
-      createdAt: new Date(),
-      user: {
-        _id: 1,
-      },
-    },
-    {
-      _id: 5,
-      text: 'Sure, take your timne.',
-      createdAt: new Date(),
-      user: {
-        _id: 1,
-      },
-    },  
-  ];
+
+import { db } from '../firebase';
+
 
 const renderBubble = (props)=> {
     return <Bubble {...props} 
@@ -81,13 +39,27 @@ function Chat() {
 
     const username = route.params.name
 
-    useEffect(() => {
-        setMessages(initialMessages)
+    useLayoutEffect(() => {
+        const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => setMessages(
+            snapshot.docs.map(doc => ({
+                _id: doc.data()._id,
+                createdAt: doc.data().createdAt.toDate(),
+                text: doc.data().text,
+                user: doc.data().user,
+            }))
+        ));
+       return () => {
+          unsubscribe();
+        };
       }, [])
     
-      const onSend = useCallback((messages = []) => {
-        setMessages(previousMessages => GiftedChat.append(previousMessages, messages))
-      }, [])
+    const onSend = useCallback((messages = []) => {
+    setMessages(previousMessages => GiftedChat.append(previousMessages, messages))
+    const { _id, createdAt, text, user,} = messages[0]
+
+    addDoc(collection(db, 'messages'), { _id, createdAt,  text, user });
+}, []);
     
   return (
     <View style={styles.container}>
