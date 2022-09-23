@@ -71,8 +71,8 @@ function Start() {
     <Text style={styles.buttontext}>Start Chatting</Text>
   </Pressable>
 </View>
-        </ImageBackground>
-      </View>
+  </ImageBackground>
+</View>
   )
 }
 

@@ -12,7 +12,7 @@ import {useNetInfo} from '@react-native-community/netinfo';
 import { db } from '../firebase';
 
 const renderInputToolbar = (
-  props) => <InputToolbar {...props} />;
+  props, isConnected) => isConnected ? <InputToolbar {...props} />: null;
 
 
 const renderBubble = (props)=> {
@@ -54,6 +54,7 @@ const Chat = () => {
       });
     }
     else {
+      console.info('MODE: OFFLINE')
       if (messages.length === 0) {
         getMessages()
       }
@@ -69,8 +70,6 @@ const Chat = () => {
   try {
       let messageList = await AsyncStorage.getItem('messages') || [];
     setMessages(JSON.parse(messageList));
-    console.log('we are offline')
-    console.log(JSON.parse(await AsyncStorage.getItem('messages')))
   } catch (error) {
     console.error(error.message)
   }
@@ -112,15 +111,16 @@ const saveMessages = useCallback(async () => {
         <Text>Welcome to the chat</Text>
         <GiftedChat
           inverted={true}
+          disableComposer={!netInfo.isConnected}
           renderBubble={renderBubble}
-          renderInputToolbar={netInfo.isConnected ? renderInputToolbar : null}
-            messages={messages}
-            onSend={messages => onSend(messages)}
-            user={{
-                _id: 1,
-                name: username,
-                avatar: 'https://placeimg.com/140/140/any'
-            }}
+          renderInputToolbar={(props) =>renderInputToolbar(props, netInfo.isConnected)}
+          messages={messages}
+          onSend={messages => onSend(messages)}
+          user={{
+            _id: 1,
+            name: username,
+            avatar: 'https://placeimg.com/140/140/any'
+          }}
       />
       {/* Avoid keyboard to overlap text messages on older Andriod versions  */}
         {Platform.OS === 'android' && <KeyboardAvoidingView behavior="height" />}
