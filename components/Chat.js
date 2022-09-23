@@ -40,7 +40,6 @@ function Chat() {
   const route = useRoute();
   const netInfo = useNetInfo();
   const username = route.params.name
-  route.params.color
 
   useLayoutEffect(() => {
     let unsubscribe = () => { }
@@ -51,12 +50,14 @@ function Chat() {
       const firebaseQuery = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
       unsubscribe = onSnapshot(firebaseQuery, (snapshot) => {
         setMessages(
-          snapshot.docs.map(doc => ({
-            _id: doc.data()._id,
-            createdAt: doc.data().createdAt.toDate(),
-            text: doc.data().text,
-            user: doc.data().user,
-          }))
+          snapshot.docs.map(doc => {
+            const { _id, createdAt, text, user } = doc.data()
+            return ({
+            _id,
+            createdAt: createdAt.toDate(),
+            text,
+            user,
+          })})
         )
         saveMessages()
       });
@@ -67,7 +68,7 @@ function Chat() {
         };
     }, [netInfo.isInternetReachable, netInfo.type, saveMessages])
   
-  // temporarly storage of messages (storage)
+  // gets messages from aync storage when user is offline
   const getMessages = async () => {
   try {
       let messageList = await AsyncStorage.getItem('messages') || [];
@@ -77,9 +78,21 @@ function Chat() {
   } catch (error) {
     console.error(error.message)
   }
-};
+  };
+  
+  // eslint-disable-next-line no-unused-vars
+  const deleteMessages = async() => {
+  try {
+    await AsyncStorage.removeItem('messages');
+    this.setState({
+      messages: []
+    })
+  } catch (error) {
+    console.log(error.message);
+  }
+}
 
-// firebase storage
+// saves messages in aync storage
 const saveMessages = useCallback(async () => {
   try {
     await AsyncStorage.setItem('messages', JSON.stringify(messages));
@@ -93,9 +106,11 @@ const saveMessages = useCallback(async () => {
     setMessages(previousMessages => GiftedChat.append(previousMessages, messages))
     const { _id, createdAt, text, user} = messages[0]
 
-    // Adds messages to cloud storage
-    addDoc(collection(db, 'messages'), { _id, createdAt,  text, user });
-    }, []);
+    // adds messages to cloud storage
+    addDoc(collection(db, 'messages'), { _id, createdAt, text, user });
+    // saves messages to async storage (for offline usage)
+    saveMessages();
+    }, [saveMessages]);
     
   return (
     <View style={[styles.container, {backgroundColor:  route.params.color}]}>
