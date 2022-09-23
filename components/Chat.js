@@ -1,7 +1,7 @@
-import React, {useState,useLayoutEffect,useCallback, useEffect} from 'react'
+import React, {useState,useLayoutEffect,useCallback} from 'react'
 import {View, Text,Platform,
     KeyboardAvoidingView,StyleSheet} from 'react-native';
-import { GiftedChat, Bubble} from 'react-native-gifted-chat'
+import { GiftedChat, Bubble,InputToolbar} from 'react-native-gifted-chat'
 import { useRoute } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
@@ -11,18 +11,12 @@ import {useNetInfo} from '@react-native-community/netinfo';
 
 import { db } from '../firebase';
 
+const renderInputToolbar = (
+  props) => <InputToolbar {...props} />;
+
 
 const renderBubble = (props)=> {
     return <Bubble {...props} 
-      wrapperStyle={{
-          left: {
-            backgroundColor: '#00E6BE',
-          },
-          right: {
-            backgroundColor: '#0059F0'
-          }
-        }} 
-
       timeTextStyle={{
         left: {
           color: '#000',
@@ -35,53 +29,48 @@ const renderBubble = (props)=> {
 }
 
 
-function Chat() {
-  const [isOnine, setIsOnline] = useState(true)
+const Chat = () => {
   const [messages, setMessages] = useState([]);
   const route = useRoute();
   const netInfo = useNetInfo();
   const username = route.params.name
 
-  useEffect(() => {
-    if (netInfo.type !== 'unknown' && netInfo.isInternetReachable === false) {
-      setIsOnline(false)
-    }
-  },[netInfo.isInternetReachable, netInfo.type])
-
   useLayoutEffect(() => {
     let unsubscribe = () => { }
-    if (!isOnine) {
-      getMessages()
-    }
-    else {
+    if (netInfo.isConnected) {
       const firebaseQuery = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
       unsubscribe = onSnapshot(firebaseQuery, (snapshot) => {
-        setMessages(
-          snapshot.docs.map(doc => {
-            const { _id, createdAt, text, user } = doc.data()
-            return ({
+          setMessages(
+        snapshot.docs.map(doc => {
+          const { _id, createdAt, text, user } = doc.data()
+          return ({
             _id,
             createdAt: createdAt.toDate(),
             text,
             user,
-          })})
-        )
-        saveMessages()
+          })
+        }));
+          saveMessages();
       });
+    }
+    else {
+      if (messages.length === 0) {
+        getMessages()
+      }
     }
         
        return () => {
           unsubscribe();
         };
-    }, [isOnine, saveMessages])
+    }, [messages, netInfo.isConnected, saveMessages])
   
   // gets messages from aync storage when user is offline
   const getMessages = async () => {
   try {
       let messageList = await AsyncStorage.getItem('messages') || [];
-    setMessages({
-      messages: JSON.parse(messageList)
-    });
+    setMessages(JSON.parse(messageList));
+    console.log('we are offline')
+    console.log(JSON.parse(await AsyncStorage.getItem('messages')))
   } catch (error) {
     console.error(error.message)
   }
@@ -91,9 +80,7 @@ function Chat() {
   const deleteMessages = async() => {
   try {
     await AsyncStorage.removeItem('messages');
-    setMessages({
-      messages: []
-    })
+    setMessages([])
   } catch (error) {
     console.error(error.message);
   }
@@ -124,12 +111,13 @@ const saveMessages = useCallback(async () => {
         <Text>Hi {username}!</Text>
         <Text>Welcome to the chat</Text>
         <GiftedChat
-            inverted={true}
-            renderBubble={renderBubble}
+          inverted={true}
+          renderBubble={renderBubble}
+          renderInputToolbar={netInfo.isConnected ? renderInputToolbar : null}
             messages={messages}
             onSend={messages => onSend(messages)}
             user={{
-                _id: '1',
+                _id: 1,
                 name: username,
                 avatar: 'https://placeimg.com/140/140/any'
             }}
