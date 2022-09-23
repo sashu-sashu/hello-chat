@@ -56,14 +56,14 @@ function Start() {
   <Pressable
     onPress={() => {
         if(typeof username !== 'undefined'){
-            navigation.navigate('Chat', { name: username, color: color })
+            navigation.navigate('Chat', { name: username, color })
         }
     }}
     style={({ pressed }) => [
       {
         backgroundColor: pressed
-          ? '#585563'
-          : '#757083'
+          ? color
+          : colors.black
       },
       styles.button
     ]}

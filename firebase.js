@@ -13,4 +13,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = initializeFirestore(app, {experimentalForceLongPolling: true});
 
-export { db };
+export { db, app };
