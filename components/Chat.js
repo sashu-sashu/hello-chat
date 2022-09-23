@@ -1,4 +1,4 @@
-import React, {useState,useLayoutEffect,useCallback} from 'react'
+import React, {useState,useLayoutEffect,useCallback, useEffect} from 'react'
 import {View, Text,Platform,
     KeyboardAvoidingView,StyleSheet} from 'react-native';
 import { GiftedChat, Bubble} from 'react-native-gifted-chat'
@@ -36,14 +36,21 @@ const renderBubble = (props)=> {
 
 
 function Chat() {
+  const [isOnine, setIsOnline] = useState(true)
   const [messages, setMessages] = useState([]);
   const route = useRoute();
   const netInfo = useNetInfo();
   const username = route.params.name
 
+  useEffect(() => {
+    if (netInfo.type !== 'unknown' && netInfo.isInternetReachable === false) {
+      setIsOnline(false)
+    }
+  },[netInfo.isInternetReachable, netInfo.type])
+
   useLayoutEffect(() => {
     let unsubscribe = () => { }
-    if (netInfo.type !== 'unknown' && netInfo.isInternetReachable === false) {
+    if (!isOnine) {
       getMessages()
     }
     else {
@@ -66,7 +73,7 @@ function Chat() {
        return () => {
           unsubscribe();
         };
-    }, [netInfo.isInternetReachable, netInfo.type, saveMessages])
+    }, [isOnine, saveMessages])
   
   // gets messages from aync storage when user is offline
   const getMessages = async () => {
@@ -84,11 +91,11 @@ function Chat() {
   const deleteMessages = async() => {
   try {
     await AsyncStorage.removeItem('messages');
-    this.setState({
+    setMessages({
       messages: []
     })
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
   }
 }
 
