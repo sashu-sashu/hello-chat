@@ -8,14 +8,15 @@ import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firesto
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {useNetInfo} from '@react-native-community/netinfo';
 
-
 import { db } from '../firebase';
+//import custom CustomActions
+import MediaActions from './MediaActions';
 
 const renderInputToolbar = (
   props, isConnected) => isConnected ? <InputToolbar {...props} />: null;
 
 
-const renderBubble = (props)=> {
+const renderBubble = (props) => {
     return <Bubble {...props} 
       timeTextStyle={{
         left: {
@@ -28,15 +29,22 @@ const renderBubble = (props)=> {
     />
 }
 
+// creating the circle button
+const renderMediaActions = (props) => {
+  return <MediaActions {...props} />;
+};
+
 
 const Chat = () => {
   const [messages, setMessages] = useState([]);
   const route = useRoute();
   const netInfo = useNetInfo();
-  const username = route.params.name
+  const username = route.params.name;
+  const props = {route, netInfo, messages, styles}
 
   useLayoutEffect(() => {
     let unsubscribe = () => { }
+
     if (netInfo.isConnected) {
       const firebaseQuery = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
       unsubscribe = onSnapshot(firebaseQuery, (snapshot) => {
@@ -54,7 +62,6 @@ const Chat = () => {
       });
     }
     else {
-      console.info('MODE: OFFLINE')
       if (messages.length === 0) {
         getMessages()
       }
@@ -112,8 +119,9 @@ const saveMessages = useCallback(async () => {
         <GiftedChat
           inverted={true}
           disableComposer={!netInfo.isConnected}
+          renderActions={renderMediaActions}
           renderBubble={renderBubble}
-          renderInputToolbar={(props) =>renderInputToolbar(props, netInfo.isConnected)}
+          renderInputToolbar={renderInputToolbar(props)}
           messages={messages}
           onSend={messages => onSend(messages)}
           user={{
