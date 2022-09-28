@@ -6,7 +6,8 @@ import { useRoute } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import {useNetInfo} from '@react-native-community/netinfo';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 
 import { db } from '../firebase';
 //import custom CustomActions
@@ -40,7 +41,7 @@ const Chat = () => {
   const route = useRoute();
   const netInfo = useNetInfo();
   const username = route.params.name;
-  const props = {route, netInfo, messages, styles}
+  const props = {route, netInfo, messages, styles, onSend}
 
   useLayoutEffect(() => {
     let unsubscribe = () => { }
@@ -54,7 +55,7 @@ const Chat = () => {
           return ({
             _id,
             createdAt: createdAt.toDate(),
-            text,
+            text: text || '',
             user,
           })
         }));
@@ -104,7 +105,7 @@ const saveMessages = useCallback(async () => {
     
   const onSend = useCallback((messages = []) => {
     setMessages(previousMessages => GiftedChat.append(previousMessages, messages))
-    const { _id, createdAt, text, user} = messages[0]
+    const { _id, createdAt, text = '', user} = messages[0]
 
     // adds messages to cloud storage
     addDoc(collection(db, 'messages'), { _id, createdAt, text, user });
@@ -113,6 +114,7 @@ const saveMessages = useCallback(async () => {
     }, [saveMessages]);
     
   return (
+    <ActionSheetProvider>
     <View style={[styles.container, {backgroundColor:  route.params.color}]}>
         <Text>Hi {username}!</Text>
         <Text>Welcome to the chat</Text>
@@ -133,7 +135,7 @@ const saveMessages = useCallback(async () => {
       {/* Avoid keyboard to overlap text messages on older Andriod versions  */}
         {Platform.OS === 'android' && <KeyboardAvoidingView behavior="height" />}
       </View>
-  )
+  </ActionSheetProvider>)      
 }
 
 const styles = StyleSheet.create({

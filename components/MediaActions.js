@@ -2,18 +2,47 @@
 import React from 'react';
 //import necessary components from react-native
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useActionSheet } from "@expo/react-native-action-sheet";
 
-import onActionPress from '../utils/mediaActions'
+import { pickImage, takePhoto, getLocation } from '../utils/mediaActionHelpers';
 
+const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
 
-const MediaActions = () => {
+const MediaActions = ({onSend}) => {
+  const {showActionSheetWithOptions} = useActionSheet()
+  const cancelButtonIndex = options.findIndex(name => name === 'Cancel')
+
+  const onActionPress = () => {
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+      },
+      async (buttonIndex) => {
+        switch (buttonIndex) {
+          case 0:
+            console.log('user wants to pick an image');
+            return pickImage(onSend);
+          case 1:
+            console.log('user wants to take a photo');
+            return takePhoto(onSend);
+          case 2:
+            console.log('user wants to get their location');
+            return getLocation(onSend);
+          default:
+        }
+      },
+    );
+  };
+  
     return (
       <TouchableOpacity
        accessible={true}
        accessibilityLabel="More options"
        accessibilityHint="Let’s you choose to send an image or your geolocation."
        style={[styles.container]}
-       onPress={onActionPress}>
+       onPress={() => onActionPress()}>
         <View style={[styles.wrapper]}>
           <Text style={[styles.iconText]}>+</Text>
         </View>

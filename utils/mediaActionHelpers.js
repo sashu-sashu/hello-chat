@@ -2,8 +2,7 @@
 import * as Permissions from 'expo-permissions';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from "expo-location";
-import firebase from "firebase";
-import "firebase/firestore";
+import { app } from '../firebase';
 
 // * Upload images to firebase
 
@@ -25,12 +24,14 @@ export const imageUpload = async (uri) => {
   const imageNameBefore = uri.split("/");
   const imageName = imageNameBefore[imageNameBefore.length - 1];
 
-  const ref = firebase.storage().ref().child(`images/${imageName}`);
-  const snapshot = await ref.put(blob);
+  if ('storage' in app) { 
+    const ref = app.storage().ref().child(`images/${imageName}`);
+    const snapshot = await ref.put(blob);
 
-  blob.close();
+    blob.close();
 
-  return await snapshot.ref.getDownloadURL();
+    return await snapshot.ref.getDownloadURL();    
+  }
 }
 
 //* Let the user pick an image from the device's image library
@@ -102,29 +103,3 @@ export const getLocation = async (onSend) => {
   }
 }
 
-
-
-export const onActionPress = (context) => {
-    const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
-    const cancelButtonIndex = options.length - 1;
-    context.actionSheet().showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-      },
-      async (buttonIndex) => {
-        switch (buttonIndex) {
-          case 0:
-            console.log('user wants to pick an image');
-            return pickImage();
-          case 1:
-            console.log('user wants to take a photo');
-            return takePhoto();
-          case 2:
-            console.log('user wants to get their location');
-            return getLocation();
-          default:
-        }
-      },
-    );
-  };
