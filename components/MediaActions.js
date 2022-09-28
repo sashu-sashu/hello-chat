@@ -1,19 +1,49 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 //import necessary components from react-native
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useActionSheet } from "@expo/react-native-action-sheet";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
+import { useActionSheet } from '@expo/react-native-action-sheet';
 
 import { pickImage, takePhoto, getLocation } from '../utils/mediaActionHelpers';
 
-const options = ['Choose From Library', 'Take Picture', 'Send Location', 'Cancel'];
+const options = [
+  'Choose From Library',
+  'Take Picture',
+  'Send Location',
+  'Cancel',
+];
 
-const MediaActions = ({onSend}) => {
-  const {showActionSheetWithOptions} = useActionSheet()
-  const cancelButtonIndex = options.findIndex(name => name === 'Cancel')
+export const getPermissions = async () => {
+  if (Platform.OS === 'android') {
+    let granted = await PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+    ]);
+    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+      granted = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+      ]);
+    }
+  }
+};
+
+const MediaActions = ({ onSend }) => {
+  const { showActionSheetWithOptions } = useActionSheet();
+  const cancelButtonIndex = options.findIndex((name) => name === 'Cancel');
 
   const onActionPress = () => {
-
     showActionSheetWithOptions(
       {
         options,
@@ -32,23 +62,24 @@ const MediaActions = ({onSend}) => {
             return getLocation(onSend);
           default:
         }
-      },
+      }
     );
   };
-  
-    return (
-      <TouchableOpacity
-       accessible={true}
-       accessibilityLabel="More options"
-       accessibilityHint="Let’s you choose to send an image or your geolocation."
-       style={[styles.container]}
-       onPress={() => onActionPress()}>
-        <View style={[styles.wrapper]}>
-          <Text style={[styles.iconText]}>+</Text>
-        </View>
-      </TouchableOpacity>
-    );
-}
+
+  return (
+    <TouchableOpacity
+      accessible={true}
+      accessibilityLabel="More options"
+      accessibilityHint="Let’s you choose to send an image or your geolocation."
+      style={[styles.container]}
+      onPress={() => onActionPress()}
+    >
+      <View style={[styles.wrapper]}>
+        <Text style={[styles.iconText]}>+</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -70,6 +101,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     textAlign: 'center',
   },
- });
+});
 
-export default MediaActions; 
+export default MediaActions;
