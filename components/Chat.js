@@ -1,15 +1,11 @@
-import React, {
-  useState,
-  useLayoutEffect,
-  useCallback,
-  useEffect,
-} from 'react';
+import React, { useState, useLayoutEffect, useCallback } from 'react';
 import {
   View,
   Text,
   Platform,
   KeyboardAvoidingView,
   StyleSheet,
+  MapView,
 } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import { useRoute } from '@react-navigation/native';
@@ -27,10 +23,10 @@ import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 
 import { db } from '../firebase';
 //import custom CustomActions
-import MediaActions, { getPermissions } from './MediaActions';
+import MediaActions from './MediaActions';
 
-const renderInputToolbar = (props, isConnected) =>
-  isConnected ? <InputToolbar {...props} /> : null;
+const renderInputToolbar = (props) =>
+  props.isConnected ? <InputToolbar {...props} /> : null;
 
 const renderBubble = (props) => {
   return (
@@ -48,6 +44,24 @@ const renderBubble = (props) => {
   );
 };
 
+const renderCustomView = (props) => {
+  const { currentMessage } = props;
+  if (currentMessage.location) {
+    return (
+      <MapView
+        style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+        region={{
+          latitude: currentMessage.location.latitude,
+          longitude: currentMessage.location.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }}
+      />
+    );
+  }
+  return null;
+};
+
 // creating the circle button
 const renderMediaActions = (props) => {
   return <MediaActions {...props} />;
@@ -60,18 +74,16 @@ const Chat = () => {
   const username = route.params.name;
   const props = { route, netInfo, messages, styles, onSend };
 
-  useEffect(() => {
-    getPermissions();
-  }, []);
+  // Reference to the Firestore collection "messages"
+  const firebaseQuery = query(
+    collection(db, 'messages'),
+    orderBy('created_at', 'desc')
+  );
 
   useLayoutEffect(() => {
     let unsubscribe = () => {};
 
     if (netInfo.isConnected) {
-      const firebaseQuery = query(
-        collection(db, 'messages'),
-        orderBy('createdAt', 'desc')
-      );
       unsubscribe = onSnapshot(firebaseQuery, (snapshot) => {
         setMessages(
           snapshot.docs.map((doc) => {
@@ -95,7 +107,7 @@ const Chat = () => {
     return () => {
       unsubscribe();
     };
-  }, [messages, netInfo.isConnected, saveMessages]);
+  }, [firebaseQuery, messages, netInfo.isConnected, saveMessages]);
 
   // gets messages from aync storage when user is offline
   const getMessages = async () => {
@@ -128,15 +140,32 @@ const Chat = () => {
 
   const onSend = useCallback(
     (messages = []) => {
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, messages)
-      );
-      const { _id, createdAt, text = '', user } = messages[0];
-
-      // adds messages to cloud storage
-      addDoc(collection(db, 'messages'), { _id, createdAt, text, user });
-      // saves messages to async storage (for offline usage)
-      saveMessages();
+      const {
+        _id,
+        createdAt,
+        text = '',
+        user,
+        image = null,
+        location = null,
+      } = messages[0];
+      if (!text && !location && !image) {
+        console.error('cannot send empty message');
+      } else {
+        setMessages((previousMessages) =>
+          GiftedChat.append(previousMessages, messages)
+        );
+        // adds messages to cloud storage
+        addDoc(collection(db, 'messages'), {
+          _id,
+          createdAt,
+          text,
+          user,
+          image,
+          location,
+        });
+        // saves messages to async storage (for offline usage)
+        saveMessages();
+      }
     },
     [saveMessages]
   );
@@ -152,6 +181,7 @@ const Chat = () => {
           renderActions={renderMediaActions}
           renderBubble={renderBubble}
           renderInputToolbar={renderInputToolbar(props)}
+          renderCustomView={renderCustomView}
           messages={messages}
           onSend={(messages) => onSend(messages)}
           user={{

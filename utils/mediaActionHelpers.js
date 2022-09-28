@@ -1,7 +1,7 @@
 //import permissions and imagepicker
 import * as Permissions from 'expo-permissions';
 import * as ImagePicker from 'expo-image-picker';
-import * as Location from "expo-location";
+import * as Location from 'expo-location';
 import { app } from '../firebase';
 
 // * Upload images to firebase
@@ -21,18 +21,18 @@ export const imageUpload = async (uri) => {
     xhr.send(null);
   });
 
-  const imageNameBefore = uri.split("/");
+  const imageNameBefore = uri.split('/');
   const imageName = imageNameBefore[imageNameBefore.length - 1];
 
-  if ('storage' in app) { 
+  if ('storage' in app) {
     const ref = app.storage().ref().child(`images/${imageName}`);
     const snapshot = await ref.put(blob);
 
     blob.close();
 
-    return await snapshot.ref.getDownloadURL();    
+    return await snapshot.ref.getDownloadURL();
   }
-}
+};
 
 //* Let the user pick an image from the device's image library
 
@@ -41,10 +41,13 @@ export const pickImage = async (onSend) => {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   try {
     if (status === 'granted') {
-       // pick image
+      // pick image
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,  // only images are allowed
-      }).catch(error => console.log(error));
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 4],
+        quality: 1,
+      }).catch((error) => console.log(error));
 
       // canceled process
       if (!result.cancelled) {
@@ -55,7 +58,7 @@ export const pickImage = async (onSend) => {
   } catch (error) {
     console.error(error);
   }
-}
+};
 
 //* Let the user take a photo with device's camera
 
@@ -66,7 +69,7 @@ export const takePhoto = async (onSend) => {
     if (status === 'granted') {
       let result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      }).catch(error => console.log(error));
+      }).catch((error) => console.log(error));
 
       if (!result.cancelled) {
         const imageUrl = await imageUpload(result.uri);
@@ -76,17 +79,20 @@ export const takePhoto = async (onSend) => {
   } catch (error) {
     console.error(error.message);
   }
-}
+};
 
 //* get the location of the user by using GPS
 
 export const getLocation = async (onSend) => {
-  const { status } = await Permissions.askAsync(Permissions.LOCATION_FOREGROUND);
+  const { status } = await Permissions.askAsync(
+    Permissions.LOCATION_FOREGROUND
+  );
 
   try {
     if (status === 'granted') {
-      let result = await Location.getCurrentPositionAsync({}).catch(error => console.log(error));
-
+      let result = await Location.getCurrentPositionAsync({}).catch((error) =>
+        console.log(error)
+      );
 
       if (result) {
         console.log(result);
@@ -101,5 +107,4 @@ export const getLocation = async (onSend) => {
   } catch (error) {
     console.error(error);
   }
-}
-
+};
