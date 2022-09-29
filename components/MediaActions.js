@@ -1,14 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 //import necessary components from react-native
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  PermissionsAndroid,
-  Platform,
-} from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 
 import { pickImage, takePhoto, getLocation } from '../utils/mediaActionHelpers';
@@ -19,25 +12,6 @@ const options = [
   'Send Location',
   'Cancel',
 ];
-
-export const getPermissions = async () => {
-  if (Platform.OS === 'android') {
-    let granted = await PermissionsAndroid.requestMultiple([
-      PermissionsAndroid.PERMISSIONS.CAMERA,
-      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-      PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    ]);
-    if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-      granted = await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-      ]);
-    }
-  }
-};
 
 const MediaActions = ({ onSend }) => {
   const { showActionSheetWithOptions } = useActionSheet();

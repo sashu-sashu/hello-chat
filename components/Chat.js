@@ -13,9 +13,9 @@ import Constants from 'expo-constants';
 import {
   collection,
   addDoc,
+  onSnapshot,
   query,
   orderBy,
-  onSnapshot,
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -68,54 +68,61 @@ const renderMediaActions = (props) => {
 };
 
 const Chat = () => {
+  const [latestMessageSent, setLatestMessageSent] = useState(undefined);
   const [messages, setMessages] = useState([]);
   const route = useRoute();
   const netInfo = useNetInfo();
   const username = route.params.name;
   const props = { route, netInfo, messages, styles, onSend };
 
-  // Reference to the Firestore collection "messages"
-  const firebaseQuery = query(
-    collection(db, 'messages'),
-    orderBy('created_at', 'desc')
-  );
-
   useLayoutEffect(() => {
     let unsubscribe = () => {};
 
-    if (netInfo.isConnected) {
+    if (netInfo.isConnected && !latestMessageSent) {
+      // Reference to the Firestore collection "messages"
+      const firebaseQuery = query(
+        collection(db, 'messages'),
+        orderBy('createdAt', 'desc')
+      );
       unsubscribe = onSnapshot(firebaseQuery, (snapshot) => {
-        setMessages(
-          snapshot.docs.map((doc) => {
-            const { _id, createdAt, text, user } = doc.data();
-            return {
-              _id,
-              createdAt: createdAt.toDate(),
-              text: text || '',
-              user,
-            };
-          })
-        );
+        console.log('here');
+        const messagesFromSnapshot = snapshot.docs.map((doc) => {
+          const { _id, createdAt, text, user, location, image } = doc.data();
+          return {
+            _id,
+            createdAt: createdAt.toDate(),
+            text: text || '',
+            user,
+            location: location || null,
+            image: image || null,
+          };
+        });
+        console.log(messages);
+        console.log(messagesFromSnapshot);
+        setMessages(new Set([...messages, ...messagesFromSnapshot]));
         saveMessages();
+        setLatestMessageSent(true);
       });
-    } else {
+    } else if (!netInfo.isConnected) {
       if (messages.length === 0) {
-        getMessages();
+        getMessagesFromAsyncStorage();
       }
+      setLatestMessageSent(true);
     }
 
     return () => {
       unsubscribe();
+      deleteMessages();
     };
-  }, [firebaseQuery, messages, netInfo.isConnected, saveMessages]);
+  }, [latestMessageSent, messages, netInfo.isConnected, saveMessages]);
 
   // gets messages from aync storage when user is offline
-  const getMessages = async () => {
-    try {
-      let messageList = (await AsyncStorage.getItem('messages')) || [];
+  const getMessagesFromAsyncStorage = async () => {
+    const messageList = await AsyncStorage.getItem('messages');
+    if (!messageList) {
+      setMessages(messageList);
+    } else {
       setMessages(JSON.parse(messageList));
-    } catch (error) {
-      console.error(error.message);
     }
   };
 
@@ -165,6 +172,7 @@ const Chat = () => {
         });
         // saves messages to async storage (for offline usage)
         saveMessages();
+        setLatestMessageSent(false);
       }
     },
     [saveMessages]
@@ -176,8 +184,7 @@ const Chat = () => {
         <Text>Hi {username}!</Text>
         <Text>Welcome to the chat</Text>
         <GiftedChat
-          inverted={true}
-          disableComposer={!netInfo.isConnected}
+          showAvatarForEveryMessage={true}
           renderActions={renderMediaActions}
           renderBubble={renderBubble}
           renderInputToolbar={renderInputToolbar(props)}
