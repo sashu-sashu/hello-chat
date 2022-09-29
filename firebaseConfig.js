@@ -1,6 +1,3 @@
-import { initializeApp } from 'firebase/app';
-import { initializeFirestore } from 'firebase/firestore';
-
 import {
   REACT_APP_API_KEY,
   REACT_APP_AUTH_DOMAIN,
@@ -19,10 +16,4 @@ const firebaseConfig = {
   appId: REACT_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  merge: true,
-});
-
-export { db, app };
+export { firebaseConfig };
