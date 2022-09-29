@@ -68,6 +68,7 @@ const renderMediaActions = (props) => {
 };
 
 const Chat = () => {
+  const uid = '1';
   const [latestMessageSent, setLatestMessageSent] = useState(undefined);
   const [messages, setMessages] = useState([]);
   const route = useRoute();
@@ -79,13 +80,14 @@ const Chat = () => {
     let unsubscribe = () => {};
 
     if (netInfo.isConnected && !latestMessageSent) {
+      console.log('here');
+      //getMessagesFromAsyncStorage();
       // Reference to the Firestore collection "messages"
       const firebaseQuery = query(
         collection(db, 'messages'),
         orderBy('createdAt', 'desc')
       );
       unsubscribe = onSnapshot(firebaseQuery, (snapshot) => {
-        console.log('here');
         const messagesFromSnapshot = snapshot.docs.map((doc) => {
           const { _id, createdAt, text, user, location, image } = doc.data();
           return {
@@ -106,13 +108,12 @@ const Chat = () => {
     } else if (!netInfo.isConnected) {
       if (messages.length === 0) {
         getMessagesFromAsyncStorage();
+        setLatestMessageSent(true);
       }
-      setLatestMessageSent(true);
     }
 
     return () => {
       unsubscribe();
-      deleteMessages();
     };
   }, [latestMessageSent, messages, netInfo.isConnected, saveMessages]);
 
@@ -120,7 +121,7 @@ const Chat = () => {
   const getMessagesFromAsyncStorage = async () => {
     const messageList = await AsyncStorage.getItem('messages');
     if (!messageList) {
-      setMessages(messageList);
+      setMessages([]);
     } else {
       setMessages(JSON.parse(messageList));
     }
@@ -146,21 +147,21 @@ const Chat = () => {
   }, [messages]);
 
   const onSend = useCallback(
-    (messages = []) => {
+    (newMessages = []) => {
       const {
-        _id,
+        _id = _id || uid,
         createdAt,
         text = '',
         user,
         image = null,
         location = null,
-      } = messages[0];
+      } = newMessages[0];
       if (!text && !location && !image) {
         console.error('cannot send empty message');
       } else {
-        setMessages((previousMessages) =>
-          GiftedChat.append(previousMessages, messages)
-        );
+        if (newMessages.length > 0) {
+          setMessages(new Set([...messages, newMessages[0]]));
+        }
         // adds messages to cloud storage
         addDoc(collection(db, 'messages'), {
           _id,
@@ -175,7 +176,7 @@ const Chat = () => {
         setLatestMessageSent(false);
       }
     },
-    [saveMessages]
+    [messages, saveMessages]
   );
 
   return (
@@ -192,7 +193,7 @@ const Chat = () => {
           messages={messages}
           onSend={(messages) => onSend(messages)}
           user={{
-            _id: 1,
+            _id: '1',
             name: username,
             avatar: 'https://placeimg.com/140/140/any',
           }}
