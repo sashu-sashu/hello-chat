@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "hello-world-chat",
-    "slug": "hello-world-chat",
+    "name": "hello-chat",
+    "slug": "hello-chat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,9 +14,7 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },

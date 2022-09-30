@@ -37,7 +37,7 @@ expo start
 
 (be sure to configure your database and emulator prior to launching the demo)
 
-<br>
+<br>d R
 
 ### [Android Studio](https://developer.android.com/studio)
 
